@@ -12,6 +12,10 @@ poly_faces = [
 ];
 poly = [poly_vertices, poly_faces];
 
+phi=(sqrt(5)+1)/2;
+iph=(sqrt(5)-1)/2;
+
+
 // -------------------------------- TETRAHEDRON --------------------------------
 tetrahedron_vertices = [
   [+1,+1,-1],
@@ -48,9 +52,31 @@ cube_faces = [
 ];
 cube = [cube_vertices, cube_faces];
 
-// ------------------------------- DODECAHEDRON --------------------------------
+// -------------------------------- OCTAHEDRON ---------------------------------
+octahedron_vertices = [
+  [+1, 0, 0],
+  [-1, 0, 0],
+  [ 0,+1, 0],
+  [ 0,-1, 0],
+  [ 0, 0,+1],
+  [ 0, 0,-1]
+] * r;
+octahedron_faces = [
+  [0,3,4],
+  [0,4,2],
+  [0,2,5],
+  [0,5,3],
+  [1,2,4],
+  [1,4,3],
+  [1,3,5],
+  [1,5,2]
+];
+octahedron = [octahedron_vertices, octahedron_faces];
+
 phi=(sqrt(5)+1)/2;
 iph=(sqrt(5)-1)/2;
+phi2=phi*phi;
+// ------------------------------- DODECAHEDRON --------------------------------
 dodecahedron_vertices = [
   [+1  ,+1  ,+1  ],
   [+1  ,-1  ,+1  ],
@@ -89,11 +115,98 @@ dodecahedron_faces = [
 ];
 dodecahedron = [dodecahedron_vertices, dodecahedron_faces];
 
+// -------------------------------- ICOSAHEDRON --------------------------------
+icosahedron_vertices = [
+  [+phi,+1  , 0  ],
+  [+phi,-1  , 0  ],
+  [-phi,+1  , 0  ],
+  [-phi,-1  , 0  ],
+  [+1  , 0  ,+phi],
+  [-1  , 0  ,+phi],
+  [+1  , 0  ,-phi],
+  [-1  , 0  ,-phi],
+  [ 0  ,+phi,+1  ],
+  [ 0  ,+phi,-1  ],
+  [ 0  ,-phi,+1  ],
+  [ 0  ,-phi,-1  ]
+] * r / sqrt(phi*phi+1);
+icosahedron_faces = [
+  [ 0, 1, 4],
+  [ 0, 4, 8],
+  [ 4, 5, 8],
+  [ 5, 4,10],
+  [ 1,10, 4],
+  [ 3, 5,10],
+  [ 2, 5, 3],
+  [ 2, 8, 5],
+  [ 0, 8, 9],
+  [ 2, 9, 8],
+  [ 2, 3, 7],
+  [ 3,10,11],
+  [ 1,11,10],
+  [ 1, 6,11],
+  [ 0, 6, 1],
+  [ 0, 9, 6],
+  [ 2, 7, 9],
+  [ 6, 9, 7],
+  [ 3,11, 7],
+  [ 6, 7,11]
+];
+icosahedron = [icosahedron_vertices, icosahedron_faces];
+
+// --------------------------------------|--------------------------------------
+// ----------------------------- ICOSIDODECAHEDRON -----------------------------
+icosidodecahedron_vertices = [
+  [ 0     , 0     ,+phi   ],
+  [ 0     , 0     ,-phi   ],
+  [ 0     ,+phi   , 0     ],
+  [ 0     ,-phi   , 0     ],
+  [+phi   , 0     , 0     ],
+  [-phi   , 0     , 0     ],
+  [+1/2   ,+phi/2 ,+phi2/2],
+  [+1/2   ,+phi/2 ,-phi2/2],
+  [+1/2   ,-phi/2 ,+phi2/2],
+  [+1/2   ,-phi/2 ,-phi2/2],
+  [-1/2   ,+phi/2 ,+phi2/2],
+  [-1/2   ,+phi/2 ,-phi2/2],
+  [-1/2   ,-phi/2 ,+phi2/2],
+  [-1/2   ,-phi/2 ,-phi2/2],
+  [+phi2/2,+1/2   ,+phi/2 ],
+  [+phi2/2,+1/2   ,-phi/2 ],
+  [+phi2/2,-1/2   ,+phi/2 ],
+  [+phi2/2,-1/2   ,-phi/2 ],
+  [-phi2/2,+1/2   ,+phi/2 ],
+  [-phi2/2,+1/2   ,-phi/2 ],
+  [-phi2/2,-1/2   ,+phi/2 ],
+  [-phi2/2,-1/2   ,-phi/2 ],
+  [+phi/2 ,+phi2/2,+1/2   ],
+  [+phi/2 ,+phi2/2,-1/2   ],
+  [+phi/2 ,-phi2/2,+1/2   ],
+  [+phi/2 ,-phi2/2,-1/2   ],
+  [-phi/2 ,+phi2/2,+1/2   ],
+  [-phi/2 ,+phi2/2,-1/2   ],
+  [-phi/2 ,-phi2/2,+1/2   ],
+  [-phi/2 ,-phi2/2,-1/2   ],
+] * r / phi;
+icosidodecahedron_faces = [
+  [ 1,13, 9],
+  [ 1, 7,11],
+  [ 9,25,17],
+];
+icosidodecahedron = [icosidodecahedron_vertices, icosidodecahedron_faces];
+
+phi=(sqrt(5)+1)/2;
+iph=(sqrt(5)-1)/2;
 
 
 module poly(poly) {
+  for(i=[0:len(poly[0])-1]) {
+    vert=poly[0][i];
+    translate(vert) text(str(i));
+    }
+
   polyhedron(poly[0],poly[1]);
-  %sphere(r);
+  //%sphere(r);
 }
 
-poly(dodecahedron);
+poly(icosidodecahedron);
