@@ -1,3 +1,5 @@
+use <pins.scad>
+
 // Which one would you like to see?
 part = "pentagon"; // [pentagon:5,hexagon:6]
 n = part=="pentagon"?5:6;
@@ -14,107 +16,90 @@ thickness = 15; // [5:20]
 
 reverse="no"; // [yes,no]
 
+pinhole="yes"; // [yes,no]
+
 $fn=100;
 a = 2*R / (sqrt((29 + 9*sqrt(5)) /2));
+r = a / (2*sin(180/n));
+H = sqrt(R*R - r*r);
 
-echo(R,a,n,variant,thickness,reverse);
-//if(variant=="flat")
-//  flatface(upward=reverse=="yes"?true:false);
-//else
-//  sphericalface(upward=reverse=="yes"?false:true);
+wholeheight = (variant=="projected"?(R-H):0)+thickness;
+translate([0,0,reverse=="yes"?wholeheight:0]) mirror([0,0,reverse=="yes"?1:0]) {
+ // bottom part
+ rb = r * (H-thickness) / H;
+ cyl = cylinder_params(thickness,rb,r,n);
+ difference() {
+  buildcylinder(cyl);
+  if(pinhole=="yes")
+   for(face=sidefaces(cyl)) {
+    movetoface(face)
+     mirror([0,0,1]) pinhole(h=10);
+   }
+ }
 
+ // top part
+ if(variant == "projected") {
+  h = R-H+1;
+  rt = r * (R+1) / H;
+  translate([0,0,thickness])
+   intersection(){
+    translate([0,0,-H])
+     sphere(r=R);
+    cylinder(h,r,rt,$fn=n);
+   }
+ }
 
-  r = a / (2*sin(180/n));
-  H = sqrt(R*R - r*r);
-under = 15;
-above = 20;
+}
 
-  r1 = r * (H-under) / H;
-  r2 = r * (H+above) / H;
-  h = under + above;
-
-function cylinder_vertex(h,r1,r2,ni=0) =
+function cylinder_params(h,r1,r2,ni=0) =
  let(
   n=ni<=0?$fn:ni,
-  alpha = 360 / n
+  alpha = 360 / n,
+  vertices = concat(
+   [for(i=[0:n]) [r1*cos(i*alpha),r1*sin(i*alpha),0]],
+   [for(i=[0:n]) [r2*cos(i*alpha),r2*sin(i*alpha),h]]
+   ),
+  faces = concat(
+   [for(i=[0:n-1]) [i,i+n+1,i+n+2,i+1]],
+   [[for(i=[0:n-1]) i]],
+   [[for(i=[n-1:-1:0]) n+1+i]]
+  )
  )
- concat(
-    [for(i=[0:n]) [r1*cos(i*alpha),r1*sin(i*alpha),0]],
-    [for(i=[0:n]) [r2*cos(i*alpha),r2*sin(i*alpha),h]]
-  );
+ [vertices, faces];
 
-function cylinder_faces(ni=0) =
- let(
-  n=ni<=0?$fn:ni
- )
- concat(
-  [for(i=[0:n-1]) [i,i+1,i+n+2,i+n+1]],
-  [[for(i=[0:n-1]) i]],
-  [[for(i=[0:n-1]) n+1+i]]
-  );
+function sidefaces(cyl) =
+ [for(i=[0:len(cyl[1])-3]) let(vertices=cyl[0],faces=cyl[1],face=faces[i]) [for(v=face) vertices[v]]];
+
+module buildcylinder(cyl) {
+ polyhedron(cyl[0], cyl[1]);
+}
 
 module movetoface(face) {
+ center = sum(face)/len(face);
+ normal = normalize(cross(face[0]-face[1],face[2]-face[1]));
 
+ v1 = [0,0,1];
+ v2 = normal;
+ cr=cross(v1,v2);
+ axe=norm(cr)!=0?normalize(cr):normalize(cross(v1,rands(-1,+1,3)));
+ c=(v1*v2);
+ s=norm(cr);
+ M = [[axe[0]*axe[0]*(1-c) + c,        axe[0]*axe[1]*(1-c) - axe[2]*s, axe[0]*axe[2]*(1-c) + axe[1]*s, center[0]],
+      [axe[0]*axe[1]*(1-c) + axe[2]*s, axe[1]*axe[1]*(1-c) + c,        axe[1]*axe[2]*(1-c) - axe[0]*s, center[1]],
+      [axe[0]*axe[2]*(1-c) - axe[1]*s, axe[1]*axe[2]*(1-c) + axe[0]*s, axe[2]*axe[2]*(1-c) + c,        center[2]],
+      [0,                              0,                              0,                              1]
+     ];
+ multmatrix(M)
+  children();
 }
-vertex = cylinder_vertex(h,r1,r2,6);
-faces = cylinder_faces(6);
 
-echo(vertex);
-echo(faces);
-polyhedron(vertex, faces);
+function sum(vec, s=undef) =
+ let(
+  s=s==undef?[for(i=[0:len(vec[0])-1]) 0]:s
+ )
+ len(vec)==1?s+vec[0]:sum([for(i=[1:len(vec)-1]) vec[i]], s+vec[0]);
 
-
-
-
-
-
-
-
-
-module sphericalface(upward=true) {
-  r = a / (2*sin(180/n));
-  H = sqrt(R*R - r*r);
-
-  r2 = r * (R+2) / H;
-  r1 = r * (H-thickness) / H;
-  h = thickness + (R-H+2);
+function normalize(vec) =
+  vec/norm(vec);
   
-  translate([0,0,upward?0:h-2]) mirror([0,0,upward?0:1])
-   intersection() {
-    translate([0,0,-H+thickness])
-     sphere(r=R);
-    cylinder(h,r1=r1,r2=r2,$fn=n);
-   }
 
-  cylinder(h=30,r=5);
-}
-
-module sphericalfacesav(upward=true) {
-  r = a / (2*sin(180/n));
-  H = sqrt(R*R - r*r);
-
-  translate([0,0,upward?0:R-H+thickness]) mirror([0,0,upward?0:1])
-    difference() {
-      translate([0,0,-H+thickness]) {
-        intersection() {
-          sphere(r=R);
-          cylinder(2*H,r1=0,r2=2*r,$fn=n);
-        }
-      }
-      translate([0,0,-R])
-        cube(2*R, center=true);
-    }
-}
-
-module flatface(R,a,n,thickness,upward=false) {
-  r = a / (2*sin(180/n));
-  H = sqrt(R*R - r*r);
-
-  translate([0,0,upward?0:thickness]) mirror([0,0,upward?0:1])
-    difference() {
-      translate([0,0,-H+thickness]) 
-        cylinder(H,r1=0,r2=r,$fn=n);
-      translate([0,0,-R])
-        cube(2*R, center=true);
-    }      
-}
